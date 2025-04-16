@@ -8,18 +8,110 @@ namespace MyApp
     {
         static void Main(string[] args)
         {
+            TestGauss();
+            TestSeidel();
+        }
+
+        /// <summary>
+        /// Проверка метода Зейделя
+        /// </summary>
+        static void TestSeidel()
+        {
             //Выполняем ряд тестов для метода Гаусса
-            int gaussPassed = 0;
+            int testsPassed = 0;
             for (int i = 1; i <= 1000; i++)
             {
-                bool passed = testGauss(i);
+                bool passed = TestSeidel(i);
                 if (passed)
                 {
-                    gaussPassed++;
+                    testsPassed++;
                 }
             }
 
-            Console.WriteLine("\n" + "Итого пройдено " + gaussPassed + " / 1000 тестов");
+            Console.WriteLine("\n" + "Итого пройдено " + testsPassed + " / 1000 тестов");
+        }
+
+        /// <summary>
+        /// Тест, генерирующий некоторый вектор, предполагаемый решением будущего СЛАУ.
+        /// К нему применяется невырожденное преобразование, полученное СЛАУ решается методом Зейделя.
+        /// Решение должно совпасть с исходным вектором.
+        /// </summary>
+        /// <param name="iteration">Номер теста для удобства</param>
+        /// <returns>true, если метод Зейделя отработал, как запланировано. Иначе false</returns>
+        static bool TestSeidel(int iteration = -1)
+        {
+            Random random = new Random();
+            int n = 3;
+            // Случайный вектор с целыми координатами
+            Matrix sol = GenRandIntVector(n, random);
+
+            // Объект решения СЛАУ для сравнения с полученным решением
+            SLAESolution expectedSolution = new SLAESolution(SLAESolution.SolutionType.UNIQUE_SOLUTION);
+            expectedSolution.SetUniqueSolution(sol);
+
+            // Получаем невырожденную матрицу перехода.
+            // Используем её как матрицу коэффициентов, умножаем точное решение слева на матрицу перехода
+            // для получения вектора правой части
+            Matrix transformMatrix = NonSingularTransform3DMatrix(random);
+            Matrix rightHandMatrix = sol.MultiplyLeft(transformMatrix);
+
+            // Получаем решение методом Зейделя
+            SeidelSLAE slae = new SeidelSLAE(transformMatrix, rightHandMatrix);
+            SLAESolution computedSol = slae.Solve();
+
+            // Готовим вывод результатов на экран
+            StringBuilder message = new StringBuilder();
+            if (iteration > 0)
+            {
+                message.Append("Тест метода Зейделя " + iteration + ": ");
+            }
+
+            bool passed = false;
+            if (expectedSolution.EqualsPrecision(computedSol, 0.1))
+            {
+                message.Append("Решения совпали");
+                passed = true;
+            }
+            else
+            {
+                message.Append("Решения не совпали");
+                message.AppendLine("\nСистема:");
+                message.AppendLine(SLAE.BuildExpandedMatrix(transformMatrix, rightHandMatrix).ToString());
+                message.AppendLine("Ожидаемое решение:");
+                message.AppendLine(expectedSolution.ToString());
+                message.AppendLine("Полученное решение:");
+                message.AppendLine(computedSol.ToString());
+                if (computedSol.GetSolutionType() == SLAESolution.SolutionType.UNIQUE_SOLUTION)
+                {
+                    message.AppendLine("Разница решений:");
+                    Matrix diff = sol - computedSol.GetUniqueSolution();
+                    message.AppendLine(diff.ToString());
+                    message.AppendLine("Модуль разности решений:");
+                    message.AppendLine(diff.VectorNorm().ToString());
+                }
+            }
+
+            Console.WriteLine(message.ToString());
+            return passed;
+        }
+
+        /// <summary>
+        /// Проверка работы метода Гаусса
+        /// </summary>
+        static void TestGauss()
+        {
+            //Выполняем ряд тестов для метода Гаусса
+            int testsPassed = 0;
+            for (int i = 1; i <= 1000; i++)
+            {
+                bool passed = TestGauss(i);
+                if (passed)
+                {
+                    testsPassed++;
+                }
+            }
+
+            Console.WriteLine("\n" + "Итого пройдено " + testsPassed + " / 1000 тестов");
         }
 
         /// <summary>
@@ -29,12 +121,12 @@ namespace MyApp
         /// </summary>
         /// <param name="iteration">Номер теста для удобства</param>
         /// <returns>true, если метод Гаусса отработал, как запланировано. Иначе false</returns>
-        static bool testGauss(int iteration = -1)
+        static bool TestGauss(int iteration = -1)
         {
             Random random = new Random();
             int n = 3;
             // Случайный вектор с целыми координатами
-            Matrix sol = genRandIntVector(n, random);
+            Matrix sol = GenRandIntVector(n, random);
 
             // Объект решения СЛАУ для сравнения с полученным решением
             SLAESolution expectedSolution = new SLAESolution(SLAESolution.SolutionType.UNIQUE_SOLUTION);
@@ -52,7 +144,7 @@ namespace MyApp
 
             // Готовим вывод результатов на экран
             StringBuilder message = new StringBuilder();
-            if (iteration >= 0)
+            if (iteration > 0)
             {
                 message.Append("Тест метода Гаусса " + iteration + ": ");
             }
@@ -120,10 +212,10 @@ namespace MyApp
             Matrix transformMatrix = new Matrix(3, 3);
             do
             {
-                transformMatrix = genRandIntDiagonalMatrix(3, random)
-                    .MultiplyLeft(zRotationMatrix(Math.PI / 12 * random.Next(-12, 13)))
-                    .MultiplyLeft(yRotationMatrix(Math.PI / 12 * random.Next(-12, 13)))
-                    .MultiplyLeft(xRotationMatrix(Math.PI / 12 * random.Next(-12, 13)));
+                transformMatrix = GenRandIntDiagonalMatrix(3, random)
+                    .MultiplyLeft(GetZRotationMatrix(Math.PI / 12 * random.Next(-12, 13)))
+                    .MultiplyLeft(GetYRotationMatrix(Math.PI / 12 * random.Next(-12, 13)))
+                    .MultiplyLeft(GetXRotationMatrix(Math.PI / 12 * random.Next(-12, 13)));
             } while (CheckTooLowOrderOfMagnitude(transformMatrix));
 
             return transformMatrix;
@@ -136,7 +228,7 @@ namespace MyApp
         /// <param name="dim">Размерность вектора</param>
         /// <param name="random">Генератор случайных чисел</param>
         /// <returns>Случайный вектор произвольной размерности, элементами которого являются целые числа</returns>
-        static Matrix genRandIntVector(int dim, Random random)
+        static Matrix GenRandIntVector(int dim, Random random)
         {
             Matrix res = new Matrix(dim, 1);
             for (int i = 0; i < dim; i++)
@@ -157,7 +249,7 @@ namespace MyApp
         /// <param name="dim">Размерность матрицы</param>
         /// <param name="random">Генератор случайных чисел</param>
         /// <returns>Случайная диагональная матрица</returns>
-        static Matrix genRandIntDiagonalMatrix(int dim, Random random)
+        static Matrix GenRandIntDiagonalMatrix(int dim, Random random)
         {
             Matrix res = new Matrix(dim, dim);
             for (int i = 0; i < dim; i++)
@@ -176,7 +268,7 @@ namespace MyApp
         /// </summary>
         /// <param name="angle">Угол поворота</param>
         /// <returns>Матрица поворота</returns>
-        static Matrix xRotationMatrix(double angle)
+        static Matrix GetXRotationMatrix(double angle)
         {
             Matrix res = new Matrix(3, 3);
 
@@ -194,7 +286,7 @@ namespace MyApp
         /// </summary>
         /// <param name="angle">Угол поворота</param>
         /// <returns>Матрица поворота</returns>
-        static Matrix yRotationMatrix(double angle)
+        static Matrix GetYRotationMatrix(double angle)
         {
             Matrix res = new Matrix(3, 3);
 
@@ -212,7 +304,7 @@ namespace MyApp
         /// </summary>
         /// <param name="angle">Угол поворота</param>
         /// <returns>Матрица поворота</returns>
-        static Matrix zRotationMatrix(double angle)
+        static Matrix GetZRotationMatrix(double angle)
         {
             Matrix res = new Matrix(3, 3);
 

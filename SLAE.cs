@@ -21,7 +21,7 @@ namespace ssau_slae
         /// <param name="rightHandMatrix">Матрица правых частей</param>
         /// <exception cref="ArgumentNullException">Матрицы не должны быть null</exception>
         /// <exception cref="ArgumentException">Поддерживается решение только квадратных матриц.
-        /// Количество строк матрциы коэффициентов должно быть равно количеству строк матрицы правой части</exception>
+        /// Количество строк матрицы коэффициентов должно быть равно количеству строк матрицы правой части</exception>
         public SLAE(Matrix coefficientMatrix, Matrix rightHandMatrix)
         {
             if (coefficientMatrix == null || rightHandMatrix == null)

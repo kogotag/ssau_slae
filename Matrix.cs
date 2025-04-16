@@ -322,6 +322,25 @@ namespace ssau_slae
         }
 
         /// <summary>
+        /// Транспонирование матрицы
+        /// </summary>
+        /// <param name="matrix">Матрица, которую нужно транспонировать</param>
+        /// <returns>Транспонированная матрица</returns>
+        public Matrix Transposed()
+        {
+            Matrix transposedMatrix = new Matrix(GetColumnsCount(), GetRowsCount());
+            for (int i = 0; i < GetRowsCount(); i++)
+            {
+                for (int j = 0; j < GetColumnsCount(); j++)
+                {
+                    transposedMatrix.Set(j, i, Get(i, j));
+                }
+            }
+
+            return transposedMatrix;
+        }
+
+        /// <summary>
         /// Оператор сложения матриц
         /// </summary>
         /// <param name="left">Левый операнд</param>
