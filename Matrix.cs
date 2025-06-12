@@ -36,13 +36,37 @@ namespace ssau_slae
         /// <param name="matrixOther">Матрица для копирования</param>
         public Matrix(Matrix matrixOther)
         {
-            double[,] matrix = new double[matrixOther.GetRowsCount(), matrixOther.GetColumnsCount()];
+            _matrix = new double[matrixOther.GetRowsCount(), matrixOther.GetColumnsCount()];
 
             for (int i = 0; i < matrixOther.GetRowsCount(); i++)
             {
                 for (int j = 0; j < matrixOther.GetColumnsCount(); j++)
                 {
-                    matrix[i, j] = matrixOther.Get(i, j);
+                    _matrix[i, j] = matrixOther.Get(i, j);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Конструктор матрицы-столбца или матрицы-строки
+        /// </summary>
+        /// <param name="elements">Массив элементов</param>
+        /// <param name="column">матрица-столбец, если true, иначе матрица-строка</param>
+        public Matrix(double[] elements, bool column = true)
+        {
+            if (column)
+            {
+                _matrix = new double[elements.Length, 1];
+                for (int i = 0; i < elements.Length; i++)
+                {
+                    _matrix[i, 0] = elements[i];
+                }
+            } else
+            {
+                _matrix = new double[1, elements.Length];
+                for (int i = 0; i < elements.Length; i++)
+                {
+                    _matrix[0, i] = elements[i];
                 }
             }
         }
@@ -99,6 +123,36 @@ namespace ssau_slae
             }
 
             _matrix[row, column] = value;
+        }
+
+        /// <summary>
+        /// Перевести матрицу-столбец в массив
+        /// </summary>
+        /// <returns>Массив элементов</returns>
+        public double[] ColumnToArray()
+        {
+            double[] result = new double[GetRowsCount()];
+            for (int i = 0; i < GetRowsCount(); i++)
+            {
+                result[i] = Get(i, 0);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Перевести матрицу-строка в массив
+        /// </summary>
+        /// <returns>Массив элементов</returns>
+        public double[] RowToArray()
+        {
+            double[] result = new double[GetColumnsCount()];
+            for (int i = 0; i < GetColumnsCount(); i++)
+            {
+                result[i] = Get(0, i);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -454,6 +508,48 @@ namespace ssau_slae
             }
 
             return Math.Sqrt(sum);
+        }
+
+        /// <summary>
+        /// Преобразовать матрицу-столбец в массив
+        /// </summary>
+        /// <returns>Массив элементов матрицы-столбца</returns>
+        public double[] MatrixColumnToArray()
+        {
+            if (_matrix == null)
+            {
+                return new double[] { };
+            }
+
+            double[] array = new double[GetRowsCount()];
+
+            for (int i = 0; i < GetRowsCount(); i++)
+            {
+                array[i] = Get(i, 0);
+            }
+
+            return array;
+        }
+
+        /// <summary>
+        /// Преобразовать матрицу-строку в массив
+        /// </summary>
+        /// <returns>Массив элементов матрицы-строки</returns>
+        public double[] MatrixRowToArray()
+        {
+            if (_matrix == null)
+            {
+                return new double[] { };
+            }
+
+            double[] array = new double[GetColumnsCount()];
+
+            for (int i = 0; i < GetColumnsCount(); i++)
+            {
+                array[i] = Get(0, i);
+            }
+
+            return array;
         }
 
         /// <summary>

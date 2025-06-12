@@ -8,8 +8,234 @@ namespace MyApp
     {
         static void Main(string[] args)
         {
+            TestPolynoms();
             TestGauss();
             TestSeidel();
+            TestNewton();
+        }
+
+        /// <summary>
+        /// Проверка вспомогательной части программы - алгебра многочленов
+        /// </summary>
+        static void TestPolynoms()
+        {
+            Polynomial polynom1 = new Polynomial(
+                new List<Monomial>()
+                {
+                    new Monomial(new Dictionary<int, int>{ { 0, 1} }, 1)
+                }, -2d);
+
+            Polynomial polynom2 = new Polynomial(
+                new List<Monomial>()
+                {
+                    new Monomial(new Dictionary<int, int>{ { 1, 1} }, 1)
+                }, -1d);
+
+            Polynomial polynom3 = new Polynomial(
+                new List<Monomial>()
+                {
+                    new Monomial(new Dictionary<int, int>{ { 0, 1} }, 1)
+                }, -3d);
+
+            Polynomial polynom4 = new Polynomial(
+                new List<Monomial>()
+                {
+                    new Monomial(new Dictionary<int, int>{ { 1, 1} }, 1)
+                }, 2d);
+
+            Polynomial polynomsProduct = polynom1 * polynom2 * polynom3 * polynom4;
+
+            Polynomial polynomsProductExpected = new Polynomial(
+                new List<Monomial>()
+                {
+                    new Monomial(new Dictionary<int, int>{ {0, 2}, {1,2 } }, 1d),
+                    new Monomial(new Dictionary<int, int>{ {0,2 }, {1,1 } }, 1d),
+                    new Monomial(new Dictionary<int, int>{ {0,1 }, {1,2 } }, -5d),
+                    new Monomial(new Dictionary<int, int>{ {0, 1}, {1,1 } }, -5d),
+                    new Monomial(new Dictionary<int, int>{ {0,2 } }, -2d),
+                    new Monomial(new Dictionary<int, int>{ {1,2 } }, 6d),
+                    new Monomial(new Dictionary<int, int>{ {0,1 } }, 10d),
+                    new Monomial(new Dictionary<int, int>{ {1,1 } }, 6d)
+                }, -12d);
+
+            bool passed = polynomsProduct.Equals(polynomsProductExpected);
+
+            if (passed)
+            {
+                Console.WriteLine("Многочлены прошли тест");
+            }
+            else
+            {
+                Console.WriteLine(polynom1.ToString());
+                Console.WriteLine("Умножить на");
+                Console.WriteLine(polynom2.ToString());
+                Console.WriteLine("Умножить на");
+                Console.WriteLine(polynom3.ToString());
+                Console.WriteLine("Умножить на");
+                Console.WriteLine(polynom4.ToString());
+                Console.WriteLine("Равно");
+                Console.WriteLine(polynomsProduct.ToString());
+                Console.WriteLine("А должно быть");
+                Console.WriteLine(polynomsProductExpected.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Проверка метода Ньютона заданное число раз
+        /// </summary>
+        static void TestNewton()
+        {
+            //Выполняем ряд тестов для метода Ньютона
+            int testsPassed = 0;
+            for (int i = 1; i <= 1000; i++)
+            {
+                bool passed = TestNewton(i);
+                if (passed)
+                {
+                    testsPassed++;
+                }
+            }
+
+            Console.WriteLine("\n" + "Итого пройдено " + testsPassed + " / 1000 тестов");
+        }
+
+        /// <summary>
+        /// Проверка метода Ньютона
+        /// </summary>
+        /// <param name="iteration">Номер теста</param>
+        /// <returns>true, если тест пройден; иначе false</returns>
+        static bool TestNewton(int iteration = -1)
+        {
+            Random random = new Random();
+
+            // Размерность системы
+            int n = 5;
+
+            // Ожидаемое решение
+            // К сожалению, отделить корни от известного не удалось, поэтому наличие известного корня не позволяет проверить метод.
+            // Тем не менее, он используется для построения функций-многочленов
+            Matrix expectedSolution = new Matrix(new double[]
+            {
+                1d,
+                1d,
+                1d,
+                1d,
+                1d
+            });
+
+            // Началньая точка
+            Matrix startingPoint = new Matrix(expectedSolution);
+
+            // Сдвигаемся от известного корня на небольшое расстояние
+            for (int i = 0; i < n; i++)
+            {
+                startingPoint.Set(i, 0, expectedSolution.Get(i, 0) + random.NextDouble() / 3);
+            }
+
+            // Генерируем случайные многочлены
+            Polynomial[] polynoms = new Polynomial[n];
+            for (int i = 0; i < n; i++)
+            {
+                polynoms[i] = GenRandPolynomial(random, n, expectedSolution);
+            }
+
+            // Конвертируем многочлены в функции
+            MathFunction[] functions = new MathFunction[n];
+            for (int i = 0; i < n; i++)
+            {
+                functions[i] = polynoms[i].ConvertToFunction();
+            }
+
+            // Создаём объект решения
+            NewtonSystemsSolver solver = new NewtonSystemsSolver(functions, startingPoint);
+            // Получаем решение методом Ньютона
+            Matrix computedSolution = solver.Solve();
+
+            StringBuilder message = new StringBuilder();
+            if (iteration > 0)
+            {
+                message.Append("Тест метода Ньютона " + iteration + ": ");
+            }
+
+            Matrix value = new Matrix(n, 1);
+            for (int i = 0; i < n; i++)
+            {
+                value.Set(i, 0, functions[i].Evaluate(computedSolution.ColumnToArray()));
+            }
+
+            bool passed = false;
+            if (value.VectorNorm() < 0.1d)
+            {
+                message.Append("Решение удовлетворяет уравнениям");
+                passed = true;
+            }
+            else
+            {
+                message.Append("Решения не удовлетворяют уравнениям");
+            }
+
+            Console.WriteLine(message.ToString());
+            return passed;
+        }
+
+        /// <summary>
+        /// Сгенерировать случайный многочлен с одним известным корнем и несколькими вторичными, удалёнными на значительное расстояние от того
+        /// </summary>
+        /// <param name="random">Объект генератора случайных чисел</param>
+        /// <param name="dim">Размерность пространства</param>
+        /// <param name="root">Известный корень</param>
+        /// <returns>Многочлен</returns>
+        static Polynomial GenRandPolynomial(Random random, int dim, Matrix root)
+        {
+            // Создаём список для известных нулей функции
+            List<Matrix> roots = new List<Matrix>();
+            roots.Add(root);
+
+            // От искомого корня сдвигаемся на значительное расстояние
+            for (int i = 0; i < dim; i++)
+            {
+                Matrix newRoot = new Matrix(root);
+                for (int j = 0; j < dim; j++)
+                {
+                    newRoot.Set(j, 0, newRoot.Get(j, 0) + random.NextDouble() * 8d + 2d);
+                }
+            }
+
+            // Список многочленов
+            List<Polynomial> polynoms = new List<Polynomial>();
+
+            // Создаём список многочленов-скобок вида (x_i-a), чтобы перемножать их и получать функции с известными корнями
+            // Сначала делаем скобки для искомого корня
+            for (int i = 0; i < dim; i++)
+            {
+                polynoms.Add(new Polynomial(new List<Monomial>()
+                {
+                    new Monomial(new Dictionary<int, int>{ { i, 1 } }, 1)
+                }, -root.Get(i, 0)));
+            }
+
+            // Затем делаем скобки для вторичных корней
+            foreach (Matrix secondaryRoot in roots)
+            {
+                for (int i = 0; i < random.Next(1, dim + 1); i++)
+                {
+                    polynoms.Add(new Polynomial(new List<Monomial>()
+                    {
+                        new Monomial(new Dictionary<int, int>{ { i, 1 } }, 1)
+                    }, -secondaryRoot.Get(i, 0)));
+                }
+            }
+
+            Polynomial finalPolynom = polynoms[0];
+
+            // Перемножаем полиномы-скобки
+            for (int i = 1; i < polynoms.Count; i++)
+            {
+                finalPolynom *= polynoms[i];
+            }
+
+            // Делаем из полученного полинома функцию
+            return finalPolynom;
         }
 
         /// <summary>
@@ -74,7 +300,7 @@ namespace MyApp
             }
             else
             {
-                message.Append("Решения не совпали");
+                message.AppendLine("Решения не совпали");
                 message.AppendLine("\nСистема:");
                 message.AppendLine(SLAE.BuildExpandedMatrix(transformMatrix, rightHandMatrix).ToString());
                 message.AppendLine("Ожидаемое решение:");
@@ -157,7 +383,7 @@ namespace MyApp
             }
             else
             {
-                message.Append("Решения не совпали");
+                message.AppendLine("Решения не совпали");
                 message.AppendLine("\nСистема:");
                 message.AppendLine(SLAE.BuildExpandedMatrix(transformMatrix, rightHandMatrix).ToString());
                 message.AppendLine("Ожидаемое решение:");
@@ -191,7 +417,7 @@ namespace MyApp
             {
                 for (int j = 0; j < matrix.GetColumnsCount(); j++)
                 {
-                    if (Math.Abs(matrix.Get(i,j)) < 1E-3)
+                    if (Math.Abs(matrix.Get(i, j)) < 1E-3)
                     {
                         return true;
                     }
