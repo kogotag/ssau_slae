@@ -8,16 +8,97 @@ namespace MyApp
     {
         static void Main(string[] args)
         {
-            TestPolynoms();
+            TestPolynomials();
             TestGauss();
             TestSeidel();
             TestNewton();
+            TestJacobiRotations();
+        }
+
+        /// <summary>
+        /// Проверка метода вращений Якоби
+        /// </summary>
+        static void TestJacobiRotations()
+        {
+            //Выполняем ряд тестов для метода вращений Якоби
+            int testsPassed = 0;
+            for (int i = 1; i <= 1000; i++)
+            {
+                bool passed = TestJacobiRotations(i);
+                if (passed)
+                {
+                    testsPassed++;
+                }
+            }
+
+            Console.WriteLine("\n" + "Итого пройдено " + testsPassed + " / 1000 тестов");
+        }
+
+        /// <summary>
+        /// Проверка метода вращений Якоби
+        /// </summary>
+        /// <param name="iteration">Номер теста</param>
+        /// <returns>true, если собственный вектор, умноженный на соответствующее ему собственное значение,
+        ///  близок к собственному вектору, на который воздействовали оператором; иначе false</returns>
+        static bool TestJacobiRotations(int iteration = -1)
+        {
+            Random random = new Random();
+            int n = 5;
+
+            // Генерируем случайную симметрическую матрицу преобразования
+            Matrix transformMatrix = new Matrix(n, n);
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = i; j < n; j++)
+                {
+                    double number = 0d;
+                    do
+                    {
+                        number = (random.NextDouble() - 0.5d) * 5d;
+                    } while (number == 0d);
+
+                    transformMatrix.Set(i, j, number);
+                    if (i == j)
+                    {
+                        continue;
+                    }
+                    transformMatrix.Set(j, i, number);
+                }
+            }
+
+            // Получаем собственные векторы и собственные значения методом вращений Якоби
+            JacobiRotations jacobiRotations = new JacobiRotations(transformMatrix);
+            EigenSolution solution = jacobiRotations.Solve();
+            List<Matrix> eigenVectors = solution.GetEigenVectors();
+            Matrix eigenValues = solution.GetEigenValues();
+
+            bool passed = true;
+            for (int i = 0; i < n; i++)
+            {
+                Matrix vector1 = eigenVectors[i].MultiplyLeft(transformMatrix);
+                Matrix vector2 = eigenVectors[i] * eigenValues.Get(i, 0);
+
+                if ((vector1 - vector2).VectorNorm() >= 2d)
+                {
+                    passed = false;
+                }
+            }
+
+            if (passed)
+            {
+                Console.WriteLine("Метод вращений Якоби " + (iteration > 0 ? iteration : "") + ": Решение в допустимом диапазоне");
+            } else
+            {
+                Console.WriteLine("Метод вращений Якоби " + (iteration > 0 ? iteration : "") + ": Решение вне допустимого диапазона");
+            }
+
+            return passed;
         }
 
         /// <summary>
         /// Проверка вспомогательной части программы - алгебра многочленов
         /// </summary>
-        static void TestPolynoms()
+        static void TestPolynomials()
         {
             Polynomial polynom1 = new Polynomial(
                 new List<Monomial>()
@@ -43,7 +124,7 @@ namespace MyApp
                     new Monomial(new Dictionary<int, int>{ { 1, 1} }, 1)
                 }, 2d);
 
-            Polynomial polynomsProduct = polynom1 * polynom2 * polynom3 * polynom4;
+            Polynomial polynomialsProduct = polynom1 * polynom2 * polynom3 * polynom4;
 
             Polynomial polynomsProductExpected = new Polynomial(
                 new List<Monomial>()
@@ -58,7 +139,7 @@ namespace MyApp
                     new Monomial(new Dictionary<int, int>{ {1,1 } }, 6d)
                 }, -12d);
 
-            bool passed = polynomsProduct.Equals(polynomsProductExpected);
+            bool passed = polynomialsProduct.Equals(polynomsProductExpected);
 
             if (passed)
             {
@@ -74,7 +155,7 @@ namespace MyApp
                 Console.WriteLine("Умножить на");
                 Console.WriteLine(polynom4.ToString());
                 Console.WriteLine("Равно");
-                Console.WriteLine(polynomsProduct.ToString());
+                Console.WriteLine(polynomialsProduct.ToString());
                 Console.WriteLine("А должно быть");
                 Console.WriteLine(polynomsProductExpected.ToString());
             }

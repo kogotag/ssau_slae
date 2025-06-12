@@ -484,6 +484,56 @@ namespace ssau_slae
         }
 
         /// <summary>
+        /// Умножение на матрицы на число справа
+        /// </summary>
+        /// <param name="left">Левый операнд</param>
+        /// <param name="right">Правый операнд</param>
+        /// <returns>Произведение матрицы и числа</returns>
+        public static Matrix? operator *(Matrix left, double right)
+        {
+            if (left == null)
+            {
+                return null;
+            }
+
+            Matrix res = new Matrix(left);
+            for (int i = 0; i < left.GetRowsCount(); i++)
+            {
+                for (int j = 0; j < left.GetColumnsCount(); j++)
+                {
+                    res.Set(i, j, res.Get(i, j) * right);
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
+        /// Умножение матрицы на число слева
+        /// </summary>
+        /// <param name="left">Левый операнд</param>
+        /// <param name="right">Правый операнд</param>
+        /// <returns>Произведение матрицы и числа</returns>
+        public static Matrix? operator *(double left, Matrix right)
+        {
+            if (right == null)
+            {
+                return null;
+            }
+
+            Matrix res = new Matrix(right);
+            for (int i = 0; i < right.GetRowsCount(); i++)
+            {
+                for (int j = 0; j < right.GetColumnsCount(); j++)
+                {
+                    res.Set(i, j, res.Get(i, j) * left);
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
         /// Норма вектора
         /// </summary>
         /// <returns>Норма вектора</returns>
@@ -550,6 +600,31 @@ namespace ssau_slae
             }
 
             return array;
+        }
+
+        /// <summary>
+        /// Проверка, является ли матрица симметрической
+        /// </summary>
+        /// <returns>true, если матрица симметрическая; иначе false</returns>
+        public bool IsSymmetrical()
+        {
+            if (GetRowsCount() != GetColumnsCount())
+            {
+                return false;
+            }
+
+            for (int i = 0; i < GetRowsCount(); i++)
+            {
+                for (int j = i; j < GetColumnsCount(); j++)
+                {
+                    if (Get(i, j) != Get(j, i))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
