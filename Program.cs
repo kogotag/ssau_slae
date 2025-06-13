@@ -13,6 +13,65 @@ namespace MyApp
             TestSeidel();
             TestNewton();
             TestJacobiRotations();
+            TryRungeKutta45();
+        }
+
+        /// <summary>
+        /// Демонстрация работы метода Рунге-Кутты
+        /// </summary>
+        static void TryRungeKutta45()
+        {
+            // Размерность 3
+            int n = 3;
+
+            // Массив функций, заданных вручную
+            MathFunction[] functions = new MathFunction[n];
+            functions[0] = new MathFunction((double[] args) =>
+            {
+                return args[2] * args[3];
+            });
+            functions[1] = new MathFunction((double[] args) =>
+            {
+                return Math.Sin(args[0] * args[2]);
+            });
+            functions[2] = new MathFunction((double[] args) =>
+            {
+                return Math.Cos(args[1]);
+            });
+
+            // Начальные условия
+            Matrix startConditions = new Matrix(new double[]
+            {
+                5d,
+                5d,
+                5d
+            });
+
+            // Создаём объект решателя, интегрируем от 0 до 10 секунд с шагом 0.01
+            ODE ode = new ODE(functions, startConditions, 0d, 10d, 0.01d);
+
+            // Получаем решение
+            Matrix solution = ode.SolveRungeKutta45();
+
+            // Выводим решение на экран
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Решение, полученное методом Рунге-Кутты:");
+            for (int i = 0; i < solution.GetColumnsCount(); i++)
+            {
+                for (int j = 0; j < solution.GetRowsCount() - 1; j++)
+                {
+                    sb.Append("y_");
+                    sb.Append(i);
+                    sb.Append(" = ");
+                    sb.Append(solution.Get(j, i));
+                    sb.Append(", ");
+                }
+                sb.Append("t = ");
+                sb.Append(solution.Get(solution.GetRowsCount() - 1, i));
+                sb.Append("\n");
+            }
+
+            Console.WriteLine(sb.ToString());
         }
 
         /// <summary>
